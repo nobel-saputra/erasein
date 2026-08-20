@@ -139,7 +139,7 @@ export function ImageList() {
     if (exportBgColor !== 'transparent' || exportFormat !== 'png' || scale !== 1.0) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const img = new (globalThis as any).Image();
       const url = URL.createObjectURL(blob);
 
       await new Promise((resolve) => {
