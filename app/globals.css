@@ -1,26 +1,328 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+/* @import "shadcn/tailwind.css"; we don't need this anymore since we are using custom UI */
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface-tint: #0053db;
+  --on-surface: #131b2e;
+  --surface-dim: #d2d9f4;
+  --on-primary-fixed: #00174b;
+  --on-secondary-fixed: #0b1c30;
+  --on-secondary-fixed-variant: #38485d;
+  --primary-fixed-dim: #b4c5ff;
+  --on-tertiary-fixed-variant: #444749;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+  --primary-fixed: #dbe1ff;
+  --on-primary: #ffffff;
+  --surface-container-high: #e2e7ff;
+  --surface-container-highest: #dae2fd;
+  --error-container: #ffdad6;
+  --on-primary-container: #eeefff;
+  --inverse-surface: #283044;
+  --background: #faf8ff;
+  --on-primary-fixed-variant: #003ea8;
+  --outline: #737686;
+  --on-surface-variant: #434655;
+  --secondary: #505f76;
+  --on-tertiary-container: #eff1f3;
+  --outline-variant: #c3c6d7;
+  --on-tertiary: #ffffff;
+  --on-secondary: #ffffff;
+  --tertiary: #525657;
+  --secondary-container: #d0e1fb;
+  --surface: #faf8ff;
+  --on-tertiary-fixed: #191c1e;
+  --secondary-fixed-dim: #b7c8e1;
+  --on-background: #131b2e;
+  --surface-variant: #dae2fd;
+  --inverse-primary: #b4c5ff;
+  --primary: #004ac6;
+  --surface-container-lowest: #ffffff;
+  --surface-bright: #faf8ff;
+  --on-secondary-container: #54647a;
+  --tertiary-fixed: #e0e3e5;
+  --error: #ba1a1a;
+  --tertiary-fixed-dim: #c4c7c9;
+  --surface-container-low: #f2f3ff;
+  --surface-container: #eaedff;
+  --secondary-fixed: #d3e4fe;
+  --inverse-on-surface: #eef0ff;
+  --tertiary-container: #6b6e70;
+  --primary-container: #2563eb;
+  /* shadcn/ui alias tokens */
+  --foreground: #131b2e;
+  --popover: #ffffff;
+  --popover-foreground: #131b2e;
+  --muted: #f2f3ff;
+  --muted-foreground: #434655;
+  --border: #c3c6d7;
+  --input: #c3c6d7;
+  --ring: #004ac6;
+  --destructive: #ba1a1a;
+  --primary-foreground: #ffffff;
+  --secondary-foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #131b2e;
+}
+
+.dark {
+  --surface-tint: #60a5fa;
+  --on-surface: #f8fafc;
+  --surface-dim: #0f172a;
+  --on-primary-fixed: #f8fafc;
+  --on-secondary-fixed: #e2e8f0;
+  --on-secondary-fixed-variant: #cbd5e1;
+  --primary-fixed-dim: #60a5fa;
+  --on-tertiary-fixed-variant: #cbd5e1;
+  --on-error: #0f172a;
+  --on-error-container: #fecaca;
+  --primary-fixed: #3b82f6;
+  --on-primary: #0f172a;
+  --surface-container-high: #475569;
+  --surface-container-highest: #64748b;
+  --error-container: #7f1d1d;
+  --on-primary-container: #dbeafe;
+  --inverse-surface: #e2e8f0;
+  --background: #0f172a;
+  --on-primary-fixed-variant: #bfdbfe;
+  --outline: #64748b;
+  --on-surface-variant: #94a3b8;
+  --secondary: #94a3b8;
+  --on-tertiary-container: #e2e8f0;
+  --outline-variant: #334155;
+  --on-tertiary: #0f172a;
+  --on-secondary: #0f172a;
+  --tertiary: #cbd5e1;
+  --secondary-container: #334155;
+  --surface: #0f172a;
+  --on-tertiary-fixed: #e2e8f0;
+  --secondary-fixed-dim: #94a3b8;
+  --on-background: #e2e8f0;
+  --surface-variant: #334155;
+  --inverse-primary: #3b82f6;
+  --primary: #60a5fa;
+  --surface-container-lowest: #1e293b;
+  --surface-bright: #1e293b;
+  --on-secondary-container: #cbd5e1;
+  --tertiary-fixed: #64748b;
+  --error: #f87171;
+  --tertiary-fixed-dim: #94a3b8;
+  --surface-container-low: #1e293b;
+  --surface-container: #334155;
+  --secondary-fixed: #475569;
+  --inverse-on-surface: #0f172a;
+  --tertiary-container: #475569;
+  --primary-container: #1d4ed8;
+  /* shadcn/ui alias tokens */
+  --foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
+  --input: #334155;
+  --ring: #60a5fa;
+  --destructive: #f87171;
+  --primary-foreground: #0f172a;
+  --secondary-foreground: #0f172a;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
 }
 
 @theme inline {
+  --color-primary-container: var(--primary-container);
+  --color-surface-tint: var(--surface-tint);
+  --color-on-surface: var(--on-surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+  --color-on-error: var(--on-error);
+  --color-on-error-container: var(--on-error-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-on-primary: var(--on-primary);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-error-container: var(--error-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-surface: var(--inverse-surface);
   --color-background: var(--background);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  --color-outline: var(--outline);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-secondary: var(--secondary);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-outline-variant: var(--outline-variant);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-on-secondary: var(--on-secondary);
+  --color-tertiary: var(--tertiary);
+  --color-secondary-container: var(--secondary-container);
+  --color-surface: var(--surface);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-background: var(--on-background);
+  --color-surface-variant: var(--surface-variant);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-primary: var(--primary);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-bright: var(--surface-bright);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-error: var(--error);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-tertiary-container: var(--tertiary-container);
+  /* shadcn/ui alias tokens */
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --spacing-stack-md: 1rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-stack-sm: 0.5rem;
+  --spacing-margin-desktop: 2.5rem;
+  --spacing-margin-mobile: 1rem;
+  --spacing-container-max: 1280px;
+  --spacing-stack-lg: 2rem;
+
+  --font-headline-sm: "Inter", sans-serif;
+  --font-headline-lg-mobile: "Inter", sans-serif;
+  --font-body-sm: "Inter", sans-serif;
+  --font-label-sm: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-headline-md: "Inter", sans-serif;
+  --font-headline-xl: "Inter", sans-serif;
+  --font-headline-xl-mobile: "Inter", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-headline-lg: "Inter", sans-serif;
+  --font-label-md: "Inter", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@utility text-headline-sm {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+@utility text-headline-lg-mobile {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+@utility text-body-sm {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+@utility text-label-sm {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+@utility text-headline-md {
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+@utility text-headline-xl {
+  font-size: 36px;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+@utility text-headline-xl-mobile {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+}
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+@utility text-headline-lg {
+  font-size: 30px;
+  line-height: 38px;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+@utility text-label-md {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.checkerboard-bg {
+  background-color: #1e293b;
+  background-image:
+    linear-gradient(45deg, #334155 25%, transparent 25%),
+    linear-gradient(-45deg, #334155 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #334155 75%),
+    linear-gradient(-45deg, transparent 75%, #334155 75%);
+  background-size: 24px 24px;
+  background-position:
+    0 0,
+    0 12px,
+    12px -12px,
+    -12px 0px;
+}
+
+/* Smooth theme transition (enabled temporarily while toggling dark/light mode) */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, fill 0.3s ease, stroke 0.3s ease, box-shadow 0.3s ease;
+  transition-delay: 0s !important;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-background min-h-screen flex flex-col antialiased;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Hide scrollbar for filter pill row */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
