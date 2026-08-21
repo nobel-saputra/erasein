@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Nav } from "@/components/nav";
-import { Footer } from "@/components/footer";
 import { InlineScript } from "@/components/inline-script";
 import { Toaster } from "@/components/ui/toast";
 
@@ -28,9 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <Nav />
         {children}
-        <Footer />
         <Toaster />
       </body>
     </html>
