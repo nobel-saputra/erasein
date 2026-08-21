@@ -1,4 +1,4 @@
-// lib/store.ts
+// Global state for the processing queue and export settings.
 import { create } from 'zustand';
 
 interface QueueState {
@@ -7,11 +7,11 @@ interface QueueState {
   isProcessing: boolean;
   isModelReady: boolean;
   
-  // State khusus Transformers.js
+  // Tracks the model download state and progress percentage.
   isModelDownloading: boolean;
   modelProgress: number;
   
-  // State for export background color & format
+  // Export options for output format, background color, and resolution.
   exportBgColor: string;
   exportFormat: 'png' | 'jpeg' | 'webp';
   exportResolution: 'low' | 'standard' | 'hd';
@@ -25,6 +25,7 @@ interface QueueState {
   setIsModelReady: (status: boolean) => void;
   setModelProgress: (isDownloading: boolean, progress: number) => void;
   resetQueue: () => void;
+  clearProcessing: () => void;
 }
 
 export const useQueueStore = create<QueueState>((set) => ({
@@ -44,7 +45,13 @@ export const useQueueStore = create<QueueState>((set) => ({
   setExportFormat: (format) => set({ exportFormat: format }),
   setExportResolution: (res) => set({ exportResolution: res }),
   setTotalImages: (total) => set({ totalImages: total }),
-  incrementProcessed: () => set((state) => ({ processedCount: state.processedCount + 1 })),
+  incrementProcessed: () => set((state) => {
+    const processedCount = state.processedCount + 1;
+    // When all queued images are done, stop the "processing" state so the
+    // banner and the dropzone disable condition no longer stay stuck on.
+    const isProcessing = processedCount < state.totalImages;
+    return { processedCount, isProcessing };
+  }),
   setIsProcessing: (status) => set({ isProcessing: status }),
   setIsModelReady: (status) => set({ isModelReady: status }),
   setModelProgress: (isDownloading, progress) => set({ isModelDownloading: isDownloading, modelProgress: progress }),
@@ -56,4 +63,5 @@ export const useQueueStore = create<QueueState>((set) => ({
     isModelDownloading: false,
     modelProgress: 0
   }),
+  clearProcessing: () => set({ isProcessing: false, totalImages: 0, processedCount: 0 }),
 }));

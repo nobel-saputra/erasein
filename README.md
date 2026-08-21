@@ -116,6 +116,14 @@ Processed images are automatically saved to the History page, reachable from the
 - Images are stored locally in your browser's IndexedDB and are used only to restore your queue and History.
 - Clear your History or use Clear Data at any time to remove everything.
 
+### 8. Legal and Support Pages
+
+Reachable from the menu in the top navigation bar:
+
+- Support - get help via GitHub and support the project.
+- Privacy Policy - how EraseIn handles your data (local processing, no tracking).
+- Terms of Service - the terms that apply when using EraseIn.
+
 ## Project Structure
 
 ```

@@ -1,9 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 /* @import "shadcn/tailwind.css"; we don't need this anymore since we are using custom UI */
-
+ 
 @custom-variant dark (&:is(.dark *));
-
+ 
 :root {
   --surface-tint: #0053db;
   --on-surface: #131b2e;
@@ -318,6 +318,18 @@ html.theme-transition *::after {
   }
 }
 
+/* Ensure every clickable control shows a pointer cursor, regardless of the
+   browser default for <button> inside custom components. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a.cursor-pointer,
+.cursor-pointer {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Hide scrollbar for filter pill row */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -325,4 +337,39 @@ html.theme-transition *::after {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Legal / static content cards.
+   In light mode the surface tokens are near-white, so cards on a near-white
+   page background look washed out. Use a slightly tinted container here for
+   readable contrast without changing the global token. */
+.legal-card {
+  background-color: var(--surface-container-lowest);
+  border-color: color-mix(in srgb, var(--outline-variant) 35%, transparent);
+}
+:root .legal-card {
+  background-color: var(--surface-container);
+}
+.dark .legal-card {
+  background-color: color-mix(in srgb, var(--surface-container-high) 60%, var(--surface-container-highest));
+}
+
+/* Material Symbols fallback definition.
+   Google's stylesheet defines `.material-symbols-outlined`; this keeps icons
+   rendering (ligature -> glyph) even if the external stylesheet fails to load,
+   and prevents raw ligature text (e.g. "tune") from showing. */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
 }

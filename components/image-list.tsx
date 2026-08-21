@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, ImageRecord } from '../lib/db';
 import { useQueueStore } from '../lib/store';
-
+import { resolveExport } from '../lib/export';
+ 
 const Thumbnail = ({ file }: { file: Blob }) => {
   const url = useMemo(() => URL.createObjectURL(file), [file]);
   useEffect(() => () => URL.revokeObjectURL(url), [url]);
@@ -98,11 +99,11 @@ export function ImageList() {
   const [sliderPos, setSliderPos] = useState(50);
   const [isZoomed, setIsZoomed] = useState(false);
   const originalUrl = useMemo(
-    () => (compareItem && compareItem.processedBlob ? URL.createObjectURL(compareItem.originalFile) : ''),
+    () => (compareItem && compareItem.processedBlob ? URL.createObjectURL(compareItem.originalFile) : null),
     [compareItem]
   );
   const processedUrl = useMemo(
-    () => (compareItem && compareItem.processedBlob ? URL.createObjectURL(compareItem.processedBlob) : ''),
+    () => (compareItem && compareItem.processedBlob ? URL.createObjectURL(compareItem.processedBlob) : null),
     [compareItem]
   );
   
@@ -110,6 +111,31 @@ export function ImageList() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { exportBgColor, exportFormat, exportResolution } = useQueueStore();
+
+  const settings = useMemo(
+    () => ({ exportBgColor, exportFormat, exportResolution }),
+    [exportBgColor, exportFormat, exportResolution]
+  );
+
+  // Resolve the actual exported blob (with format/bg/quality applied) so the
+  // size shown in the queue matches what gets downloaded.
+  const [resolvedSizes, setResolvedSizes] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const next: Record<string, number> = {};
+      for (const img of images ?? []) {
+        if (img.status !== 'done' || !img.processedBlob) continue;
+        const result = await resolveExport(img, settings);
+        if (result && !cancelled) next[img.id] = result.blob.size;
+      }
+      if (!cancelled) setResolvedSizes(next);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [images, settings]);
 
   useEffect(() => {
     return () => {
@@ -139,7 +165,7 @@ export function ImageList() {
     if (exportBgColor !== 'transparent' || exportFormat !== 'png' || scale !== 1.0) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new (globalThis as any).Image();
+      const img = new window.Image();
       const url = URL.createObjectURL(blob);
 
       await new Promise((resolve) => {
@@ -257,7 +283,9 @@ export function ImageList() {
                           </div>
                         ) : (
                           <span className="font-body-sm text-body-sm text-secondary truncate mt-1">
-                            {(img.originalFile.size / (1024*1024)).toFixed(1)} MB • {img.originalFile.type.split('/')[1]?.toUpperCase() || 'IMG'}
+                            {img.status === 'done' && resolvedSizes[img.id] != null
+                              ? `${(resolvedSizes[img.id] / (1024 * 1024)).toFixed(1)} MB • ${exportFormat.toUpperCase()}`
+                              : `${(img.originalFile.size / (1024 * 1024)).toFixed(1)} MB • ${img.originalFile.type.split('/')[1]?.toUpperCase() || 'IMG'}`}
                           </span>
                         )}
                       </div>
@@ -331,7 +359,7 @@ export function ImageList() {
       )}
 
       {/* MODAL COMPARISON SLIDER */}
-      {compareItem && originalUrl && processedUrl && (
+      {compareItem && compareItem.processedBlob && originalUrl && processedUrl && (
         <div className="fixed inset-0 z-70 flex flex-col bg-[#131b2e]/95 backdrop-blur-md">
           {/* Top Bar */}
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-800/50">

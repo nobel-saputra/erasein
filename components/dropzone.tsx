@@ -1,17 +1,16 @@
-// components/dropzone.tsx
+// Drag and drop area that accepts image files and forwards them for processing.
 'use client';
 
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
-
+  
 interface DropzoneProps {
   onFilesAdded: (files: File[]) => void;
+  onReject?: (message: string) => void;
   disabled?: boolean;
 }
 
-export function ImageDropzone({ onFilesAdded, disabled = false }: DropzoneProps) {
+export function ImageDropzone({ onFilesAdded, onReject, disabled = false }: DropzoneProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       onFilesAdded(acceptedFiles);
@@ -20,10 +19,19 @@ export function ImageDropzone({ onFilesAdded, disabled = false }: DropzoneProps)
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected: (fileRejections) => {
+      if (onReject) {
+        onReject('Only image files (JPG, PNG, WEBP, GIF, AVIF, BMP) are supported.');
+      }
+      console.warn('Rejected files:', fileRejections.map((f) => f.file.name));
+    },
     accept: {
       'image/jpeg': [],
       'image/png': [],
-      'image/webp': []
+      'image/webp': [],
+      'image/gif': [],
+      'image/avif': [],
+      'image/bmp': [],
     },
     disabled
   });
@@ -31,7 +39,7 @@ export function ImageDropzone({ onFilesAdded, disabled = false }: DropzoneProps)
   return (
     <div
       {...getRootProps()}
-      className={`border-2 border-dashed transition-colors rounded-2xl bg-surface-container-lowest p-6 sm:p-12 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[300px] shadow-sm relative overflow-hidden group ${
+      className={`border-2 border-dashed transition-colors rounded-2xl bg-surface-container-lowest p-6 sm:p-12 flex flex-col items-center justify-center min-h-50 sm:min-h-75 shadow-sm relative overflow-hidden group ${
         isDragActive ? 'border-primary' : 'border-outline-variant hover:border-primary'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
@@ -47,7 +55,7 @@ export function ImageDropzone({ onFilesAdded, disabled = false }: DropzoneProps)
         {isDragActive ? 'Drop your images here...' : 'Drag & Drop Images Here'}
       </h3>
       <p className="font-body-sm text-body-sm text-secondary">
-        or click to select files (Supports JPG, PNG, WEBP)
+        or click to select files (Supports JPG, PNG, WEBP, GIF, AVIF, BMP)
       </p>
     </div>
   );

@@ -1,21 +1,20 @@
 // app/history/page.tsx
 'use client';
-
-import { useEffect, useState } from 'react';
+  
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, deleteExpiredHistory } from '@/lib/db';
+import { db, deleteExpiredHistory, type ImageRecord } from '@/lib/db';
+import { useQueueStore } from '@/lib/store';
+import { resolveExport, downloadBlob } from '@/lib/export';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from '@/components/ui/toast';
-
+ 
 const Thumbnail = ({ file }: { file: Blob }) => {
-  const [url, setUrl] = useState<string>('');
-  useEffect(() => {
-    const objectUrl = URL.createObjectURL(file);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
-  if (!url) return <span className="material-symbols-outlined text-secondary">image</span>;
-  return <img src={url} alt="thumbnail" className="w-full h-full object-cover" />;
+  const url = useMemo(() => URL.createObjectURL(file), [file]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  return <Image src={url} alt="thumbnail" fill unoptimized sizes="100%" className="object-cover" />;
 };
 
 export default function HistoryPage() {
@@ -23,17 +22,17 @@ export default function HistoryPage() {
     () => db.images.where('status').equals('done').reverse().sortBy('createdAt')
   );
 
+  const { exportBgColor, exportFormat, exportResolution } = useQueueStore();
+
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false);
+  const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('skipDeleteConfirm') === 'true'
+  );
 
   // Automatically delete images older than 1 day
   useEffect(() => {
     deleteExpiredHistory();
-  }, []);
-
-  useEffect(() => {
-    if (localStorage.getItem('skipDeleteConfirm') === 'true') setSkipDeleteConfirm(true);
   }, []);
 
   const doDelete = async (id: string) => {
@@ -71,26 +70,25 @@ export default function HistoryPage() {
   const confirmClearAllImages = (alwaysSkip: boolean) => {
     setConfirmClearAll(false);
     if (alwaysSkip) {
-      localStorage.setItem('skipDeleteConfirm', 'true');
+      localStorage.setItem('skipClearDataConfirm', 'true');
       setSkipDeleteConfirm(true);
     }
     doClearAll();
   };
 
-  const handleDownload = (blob: Blob, originalName: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
-    a.download = `${nameWithoutExt}-transparent.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownload = async (img: ImageRecord) => {
+    if (!img.processedBlob) return;
+    const settings = { exportBgColor, exportFormat, exportResolution };
+    const result = await resolveExport(img, settings);
+    if (!result) {
+      toast.add({ type: 'error', title: 'Download failed', description: 'This image has no processed result.', timeout: 4000 });
+      return;
+    }
+    downloadBlob(result.blob, result.fileName);
   };
 
   return (
-    <main className="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col gap-stack-lg">
+      <main className="grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col gap-stack-lg">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-stack-md">
         <div>
@@ -121,23 +119,23 @@ export default function HistoryPage() {
       </div>
 
       {!images ? null : images.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[300px] gap-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-12 text-center">
+        <div className="flex flex-col items-center justify-center min-h-75 gap-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-12 text-center">
           <span className="material-symbols-outlined text-[64px] text-secondary">photo_library</span>
           <h3 className="font-headline-sm text-headline-sm font-semibold text-on-surface">No images in History yet</h3>
           <p className="font-body-sm text-body-sm text-secondary">
             Images that have had their backgrounds removed on the Dashboard will automatically appear here.
           </p>
-          <a href="/" className="mt-2 inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-on-surface text-surface font-label-md text-label-md hover:bg-inverse-surface transition-colors">
+          <Link href="/" className="mt-2 inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-on-surface text-surface font-label-md text-label-md hover:bg-inverse-surface transition-colors">
             <span className="material-symbols-outlined text-[18px]">upload</span>
             Start Removing Backgrounds
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {images.map((img) => (
             <div key={img.id} className="flex flex-col rounded-xl bg-surface-container-lowest border border-outline-variant/30 overflow-hidden shadow-sm">
               <div
-                className="aspect-[4/3] w-full bg-surface-container flex items-center justify-center overflow-hidden"
+                className="aspect-4/3 w-full relative bg-surface-container flex items-center justify-center overflow-hidden"
                 style={{
                   backgroundImage:
                     'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
@@ -154,7 +152,7 @@ export default function HistoryPage() {
                 </span>
                 <div className="flex items-center gap-2 mt-1">
                   <button
-                    onClick={() => img.processedBlob && handleDownload(img.processedBlob, img.originalName)}
+                    onClick={() => handleDownload(img)}
                     className="flex-1 inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg bg-on-surface text-surface font-label-md text-label-md hover:bg-inverse-surface transition-colors"
                     title="Download"
                   >

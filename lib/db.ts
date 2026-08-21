@@ -1,14 +1,14 @@
-// src/lib/db.ts
+// Local database layer for storing images and their processing state.
 import Dexie, { type Table } from 'dexie';
 
 export interface ImageRecord {
-  id: string; // Unique ID per image
-  originalFile: Blob; // Original file
-  originalName: string; // File name (e.g. product-photo.jpg)
-  processedBlob?: Blob; // Transparent processed result
+  id: string; // Unique identifier for each image.
+  originalFile: Blob; // The original uploaded file.
+  originalName: string; // Original file name for downloads.
+  processedBlob?: Blob; // Resulting image with the background removed.
   status: 'waiting' | 'processing' | 'done' | 'error';
   errorMessage?: string;
-  createdAt: number; // For sorting the queue
+  createdAt: number; // Timestamp used to order the queue.
 }
 
 export class BackgroundRemoverDB extends Dexie {
@@ -16,7 +16,7 @@ export class BackgroundRemoverDB extends Dexie {
 
   constructor() {
     super('BackgroundRemoverDB');
-    // Create search index by id, status, and creation time
+    // Define indexes for fast lookups by id, status, and creation time.
     this.version(1).stores({
       images: 'id, status, createdAt'
     });
@@ -25,16 +25,16 @@ export class BackgroundRemoverDB extends Dexie {
 
 export const db = new BackgroundRemoverDB();
 
-// How long images are kept in History: 1 day
+// History retention window of one day in milliseconds.
 export const HISTORY_RETENTION_MS = 24 * 60 * 60 * 1000;
 
-// Delete all 'done' images older than 1 day
+// Remove images (of any status) that are older than the retention window.
+// This keeps the local DB from growing unbounded with stale waiting/error rows.
 export const deleteExpiredHistory = async (): Promise<number> => {
   const cutoff = Date.now() - HISTORY_RETENTION_MS;
   const expired = await db.images
-    .where('status')
-    .equals('done')
-    .and((img) => img.createdAt < cutoff)
+    .where('createdAt')
+    .below(cutoff)
     .toArray();
   if (expired.length > 0) {
     await db.images.bulkDelete(expired.map((img) => img.id));

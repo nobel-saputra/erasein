@@ -1,10 +1,10 @@
-// components/confirm-dialog.tsx
+// Reusable confirmation dialog with optional persistent "always" action.
 'use client';
 
 interface ConfirmDialogProps {
   open: boolean;
   title: string;
-  message: string;
+  message: string; 
   confirmLabel?: string;
   alwaysLabel?: string;
   onCancel: () => void;
@@ -25,7 +25,7 @@ export function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
       <div className="p-6 max-w-sm w-full shadow-lg bg-surface-container-lowest rounded-xl border border-outline-variant/30 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">{title}</h3>
         <p className="font-body-sm text-body-sm text-secondary mb-6">{message}</p>

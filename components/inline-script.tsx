@@ -1,4 +1,4 @@
-// components/inline-script.tsx
+// Renders an inline script tag, used to apply the theme before hydration.
 export function InlineScript({ html }: { html: string }) {
   return (
     <script

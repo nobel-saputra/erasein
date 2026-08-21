@@ -1,13 +1,14 @@
 // app/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/db';
 import { imageQueue, processImageTask } from '@/lib/queue';
 import { useQueueStore } from '@/lib/store';
+import { applyExportSettings, buildFileName, isPassthrough, EXT_MAP } from '@/lib/export';
 import { ImageDropzone } from '@/components/dropzone';
 import { ImageList } from '@/components/image-list';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -23,11 +24,9 @@ export default function Home() {
 
   // State for clear-all-data confirmation
   const [showClearModal, setShowClearModal] = useState(false);
-  const [skipClearData, setSkipClearData] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem('skipClearDataConfirm') === 'true') setSkipClearData(true);
-  }, []);
+  const [skipClearData, setSkipClearData] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('skipClearDataConfirm') === 'true'
+  );
 
   const handleFilesAdded = async (files: File[]) => {
     if (!files || files.length === 0) return;
@@ -51,59 +50,26 @@ export default function Home() {
       return;
     }
 
+    const settings = { exportBgColor, exportFormat, exportResolution };
     const zip = new JSZip();
-    let extension = exportFormat === 'jpeg' ? 'jpg' : exportFormat;
-    const scale = exportResolution === 'low' ? 0.5 : exportResolution === 'hd' ? 2.0 : 1.0;
+    let added = 0;
 
-    // If background is NOT transparent OR format is NOT png OR scaling is active
-    if (exportBgColor !== 'transparent' || exportFormat !== 'png' || scale !== 1.0) {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      for (const img of completedImages) {
-        if (!img.processedBlob) continue;
-        
-        const url = URL.createObjectURL(img.processedBlob);
-        const image = new Image();
-        
-        await new Promise((resolve) => {
-          image.onload = resolve;
-          image.src = url;
-        });
-        
-        canvas.width = image.width * scale;
-        canvas.height = image.height * scale;
-        if (ctx) {
-          if (exportBgColor !== 'transparent') {
-            ctx.fillStyle = exportBgColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          } else if (exportFormat === 'jpeg') {
-            // If JPEG format and user chose transparent, force white
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        }
-        
-        const mimeType = exportFormat === 'jpeg' ? 'image/jpeg' : exportFormat === 'webp' ? 'image/webp' : 'image/png';
-        const finalBlob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), mimeType, 0.9));
-        URL.revokeObjectURL(url);
-        
-        const nameWithoutExt = img.originalName.substring(0, img.originalName.lastIndexOf('.')) || img.originalName;
-        zip.file(`${nameWithoutExt}-edited.${extension}`, finalBlob);
-      }
-    } else {
-      // If transparent, use the original file directly (PNG)
-      completedImages.forEach((img) => {
-        if (img.processedBlob) {
-          const nameWithoutExt = img.originalName.substring(0, img.originalName.lastIndexOf('.')) || img.originalName;
-          zip.file(`${nameWithoutExt}-transparent.${extension}`, img.processedBlob);
-        }
-      });
+    for (const img of completedImages) {
+      if (!img.processedBlob) continue;
+      const finalBlob = isPassthrough(settings)
+        ? img.processedBlob
+        : await applyExportSettings(img.processedBlob, settings);
+      zip.file(buildFileName(img.originalName, settings), finalBlob);
+      added++;
     }
 
-    const content = await zip.generateAsync({ type: "blob" });
-    saveAs(content, "background-removed-images.zip");
+    if (added === 0) {
+      toast.add({ type: 'warning', title: 'Nothing to download', description: 'No processed images could be prepared.', timeout: 4000 });
+      return;
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `background-removed-images.${EXT_MAP[exportFormat] === 'jpg' ? 'zip' : 'zip'}`);
   };
 
   const doClearAllData = async () => {
@@ -112,7 +78,7 @@ export default function Home() {
     resetQueue();
     toast.add({ type: 'success', title: 'All data cleared', description: 'All images and processing data have been deleted.', timeout: 4000 });
   };
-
+ 
   const handleClearAllData = () => {
     if (skipClearData) {
       doClearAllData();
@@ -132,7 +98,7 @@ export default function Home() {
 
   return (
     <>
-      <main className="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col gap-stack-lg">
+      <main className="grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col gap-stack-lg">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-stack-md">
           <div>
@@ -167,10 +133,16 @@ export default function Home() {
           </div>
         )}
 
-        <ImageDropzone onFilesAdded={handleFilesAdded} disabled={isProcessing && imageQueue.size > 50} />
+        <ImageDropzone
+          onFilesAdded={handleFilesAdded}
+          onReject={(message) => toast.add({ type: 'error', title: 'Unsupported file', description: message, timeout: 4000 })}
+          disabled={isModelDownloading}
+        />
 
         <p className="text-center font-body-sm text-body-sm text-secondary -mt-2">
           Scroll down to download your images.
+          <br />
+          You can also customize your images by clicking the <span className="material-symbols-outlined text-[16px] align-middle font-bold text-black dark:text-white">tune</span> button.
         </p>
 
         <ImageList />

@@ -1,4 +1,4 @@
-// lib/queue.ts
+// Manages the image processing queue and the background removal worker.
 import PQueue from 'p-queue';
 import { db } from './db';
 import { useQueueStore } from './store';
@@ -8,19 +8,21 @@ export const imageQueue = new PQueue({ concurrency: 1 });
 let bgWorker: Worker | null = null;
 
 const initWorker = () => {
-  if (typeof window !== 'undefined') {
-    if (bgWorker) bgWorker.terminate(); 
-    bgWorker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+  if (typeof window === 'undefined') return;
+  // Reuse the existing worker when it is still alive. Terminating and
+  // recreating it on every retry would force the (large) model to download
+  // again, which makes retries extremely slow/expensive.
+  if (bgWorker) return;
+  bgWorker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
 
-    // GLOBAL LISTENER FOR MODEL DOWNLOAD PROGRESS
-    bgWorker.addEventListener('message', (e) => {
-      if (e.data.type === 'download_progress') {
-        useQueueStore.getState().setModelProgress(true, Math.round(e.data.progress));
-      } else if (e.data.type === 'download_done') {
-        useQueueStore.getState().setModelProgress(false, 100);
-      }
-    });
-  }
+  // Listen for model download progress events from the worker.
+  bgWorker.addEventListener('message', (e) => {
+    if (e.data.type === 'download_progress') {
+      useQueueStore.getState().setModelProgress(true, Math.round(e.data.progress));
+    } else if (e.data.type === 'download_done') {
+      useQueueStore.getState().setModelProgress(false, 100);
+    }
+  });
 };
 
 initWorker();
@@ -51,7 +53,7 @@ export const processImageTask = async (id: string, file: Blob, retries = 1) => {
     };
 
     const handleMessage = async (e: MessageEvent) => {
-      // Ignore system progress messages here
+      // Ignore the system progress messages handled globally.
       if (e.data.id === 'system') return;
 
       if (e.data.id === id) {
