@@ -15,12 +15,6 @@ export function Footer() {
           <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs leading-relaxed">
             Smart background remover. Fast, clean, and private.
           </p>
-          <div className="mt-stack-lg flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant dark:text-black bg-surface-container-highest w-fit px-3 py-1.5 rounded-full border border-outline-variant/30">
-            <span className="relative flex w-2 h-2 rounded-full bg-primary block">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping"></span>
-            </span>
-            All systems operational
-          </div>
         </div>
         {/* Column 2: Product Links */}
         <div className="flex flex-col">

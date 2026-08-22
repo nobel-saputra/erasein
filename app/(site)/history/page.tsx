@@ -24,16 +24,44 @@ export default function HistoryPage() {
 
   const { exportBgColor, exportFormat, exportResolution } = useQueueStore();
 
+  const settings = useMemo(
+    () => ({ exportBgColor, exportFormat, exportResolution }),
+    [exportBgColor, exportFormat, exportResolution]
+  );
+
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(() =>
     typeof window !== 'undefined' && localStorage.getItem('skipDeleteConfirm') === 'true'
   );
 
-  // Automatically delete images older than 1 day
+  // Automatically delete images older than 1 day, then keep cleaning in the
+  // background on a timer so the retention window is enforced reliably.
   useEffect(() => {
     deleteExpiredHistory();
+    const interval = setInterval(deleteExpiredHistory, 60 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Resolve the actual exported blob size so the displayed size matches the
+  // downloaded file (format/background/quality applied on download).
+  const [resolvedSizes, setResolvedSizes] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const next: Record<string, number> = {};
+      for (const img of images ?? []) {
+        if (!img.processedBlob) continue;
+        const result = await resolveExport(img, settings);
+        if (result && !cancelled) next[img.id] = result.blob.size;
+      }
+      if (!cancelled) setResolvedSizes(next);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [images, settings]);
 
   const doDelete = async (id: string) => {
     await db.images.delete(id);
@@ -148,7 +176,9 @@ export default function HistoryPage() {
               <div className="flex flex-col p-3 gap-2">
                 <span className="font-label-md text-label-md text-on-surface truncate" title={img.originalName}>{img.originalName}</span>
                 <span className="font-body-sm text-body-sm text-secondary">
-                  {((img.processedBlob?.size ?? img.originalFile.size) / (1024 * 1024)).toFixed(1)} MB • {new Date(img.createdAt).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {resolvedSizes[img.id] != null
+                    ? `${(resolvedSizes[img.id] / (1024 * 1024)).toFixed(1)} MB`
+                    : `${((img.processedBlob?.size ?? img.originalFile.size) / (1024 * 1024)).toFixed(1)} MB`} • {new Date(img.createdAt).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <div className="flex items-center gap-2 mt-1">
                   <button

@@ -330,6 +330,18 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Hide the page-level (window) scrollbar globally for a clean, modern look.
+   Scrolling still works via wheel/trackpad; only the visible bar is hidden.
+   The Processing Queue keeps its own visible modern scrollbar via
+   .scrollbar-modern (its explicit rules override this). */
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
 /* Hide scrollbar for filter pill row */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -339,10 +351,35 @@ button:disabled {
   display: none;
 }
 
+/* Modern, pronounced scrollbar for the processing queue list. */
+.scrollbar-modern {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--outline-variant) 70%, transparent) transparent;
+}
+.scrollbar-modern::-webkit-scrollbar {
+  width: 10px;
+}
+.scrollbar-modern::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+.scrollbar-modern::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--outline-variant) 70%, transparent);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 150ms ease;
+}
+.scrollbar-modern::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--outline-variant) 90%, transparent);
+}
+
 /* Legal / static content cards.
    In light mode the surface tokens are near-white, so cards on a near-white
    page background look washed out. Use a slightly tinted container here for
-   readable contrast without changing the global token. */
+   readable contrast without changing the global token. In dark mode use the
+   theme's own elevation scale so cards read as gently raised panels, not a
+   muddy blue-gray slab. */
 .legal-card {
   background-color: var(--surface-container-lowest);
   border-color: color-mix(in srgb, var(--outline-variant) 35%, transparent);
@@ -351,7 +388,8 @@ button:disabled {
   background-color: var(--surface-container);
 }
 .dark .legal-card {
-  background-color: color-mix(in srgb, var(--surface-container-high) 60%, var(--surface-container-highest));
+  background-color: var(--surface-container-low);
+  border-color: color-mix(in srgb, var(--outline-variant) 25%, transparent);
 }
 
 /* Material Symbols fallback definition.

@@ -70,10 +70,10 @@ function ExportControls({ stacked = false }: { stacked?: boolean }) {
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
         <span className="font-label-sm text-label-sm text-secondary sm:min-w-20 shrink-0">Quality:</span>
         <div className="flex flex-wrap bg-surface-container-low dark:bg-surface-dim rounded-lg p-1 w-fit">
-          {['low', 'standard', 'hd'].map((res) => (
+          {(['low', 'standard', 'hd'] as const).map((res) => (
             <button
               key={res}
-              onClick={() => setExportResolution(res as 'low' | 'standard' | 'hd')}
+              onClick={() => setExportResolution(res)}
               className={`px-3 py-1.5 rounded-md text-label-sm font-medium transition-colors ${
                 exportResolution === res ? 'bg-surface shadow-sm text-on-surface dark:bg-surface-container dark:text-on-surface' : 'text-secondary hover:text-on-surface'
               }`}
@@ -263,7 +263,7 @@ export function ImageList() {
         {(() => {
           const filteredImages = images.filter(img => filterStatus === 'all' || img.status === filterStatus);
           return (
-            <div className="flex flex-col gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-3 sm:p-4 shadow-sm overflow-y-auto max-h-125">
+            <div className="scrollbar-modern flex flex-col gap-3 bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-3 sm:p-4 shadow-sm overflow-y-auto max-h-125">
               {filteredImages.length === 0 ? (
                 <div className="py-6 text-center text-secondary font-body-sm text-body-sm">
                   No images in this filter queue.

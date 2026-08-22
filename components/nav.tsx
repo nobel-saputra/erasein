@@ -51,7 +51,7 @@ export function Nav() {
     <>
       <nav className="bg-surface/80 backdrop-blur-md text-primary tracking-tight docked full-width top-0 sticky z-50 border-b border-outline-variant/40 flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop w-full">
         <Link href="/" className="flex items-center">
-            <Image src={mounted && isDark ? '/black.png' : '/white.png'} alt="EraseIn" width={32} height={32} className="h-8 w-auto" />
+            <Image src={mounted && isDark ? '/black.png' : '/white.png'} alt="EraseIn" width={32} height={32} className="h-6 w-auto sm:h-8" />
           </Link>
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Desktop nav links (hidden on mobile where the hamburger menu is used) */}
@@ -81,11 +81,11 @@ export function Nav() {
               Documentation
             </Link>
           </div>
-          <button onClick={toggleTheme} className="text-secondary hover:text-primary transition-colors" aria-label="Toggle theme" title={isDark ? 'Light Mode' : 'Dark Mode'}>
-            <span className="material-symbols-outlined">{mounted && isDark ? 'light_mode' : 'dark_mode'}</span>
+          <button onClick={toggleTheme} className="flex items-center justify-center text-secondary hover:text-primary hover:bg-surface-container px-2 py-1.5 rounded-lg transition-colors" aria-label="Toggle theme" title={mounted && isDark ? 'Light Mode' : 'Dark Mode'}>
+            <span className="material-symbols-outlined text-[24px] leading-none">{mounted && isDark ? 'light_mode' : 'dark_mode'}</span>
           </button>
-          <button onClick={() => setHelpOpen(true)} className="text-secondary hover:text-primary transition-colors" aria-label="Help" title="Info">
-            <span className="material-symbols-outlined">help_outline</span>
+          <button onClick={() => setHelpOpen(true)} className="flex items-center justify-center text-secondary hover:text-primary hover:bg-surface-container px-2 py-1.5 rounded-lg transition-colors" aria-label="Help" title="Info">
+            <span className="material-symbols-outlined text-[24px] leading-none">help_outline</span>
           </button>
           {/* Hamburger menu — mobile only */}
           <button onClick={() => setMenuOpen(!menuOpen)} className="text-secondary hover:text-primary transition-colors ml-1 md:hidden" aria-label="Menu" title="Menu" aria-expanded={menuOpen}>

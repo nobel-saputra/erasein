@@ -1,14 +1,15 @@
 // app/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { db } from '@/lib/db';
 import { imageQueue, processImageTask } from '@/lib/queue';
 import { useQueueStore } from '@/lib/store';
-import { applyExportSettings, buildFileName, isPassthrough, EXT_MAP } from '@/lib/export';
+import { applyExportSettings, buildFileName, isPassthrough } from '@/lib/export';
 import { ImageDropzone } from '@/components/dropzone';
 import { ImageList } from '@/components/image-list';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -16,11 +17,31 @@ import { toast } from '@/components/ui/toast';
 
 export default function Home() {
   const { 
-    totalImages, isProcessing, isModelReady, 
+    isProcessing, isModelReady, 
     isModelDownloading, 
     exportBgColor, exportFormat, exportResolution,
-    setTotalImages, setIsProcessing, resetQueue 
+    setIsProcessing, resetQueue 
   } = useQueueStore();
+
+  // Derive the "processing" state from the actual DB queue instead of a
+  // fragile counter, so a failed image can never leave the UI stuck.
+  const pendingCount = useLiveQuery(
+    () => db.images.where('status').anyOf('waiting', 'processing').count(),
+    [],
+    0
+  );
+  const hasPending = (pendingCount ?? 0) > 0;
+
+  const totalImageCount = useLiveQuery(() => db.images.count(), [], 0);
+  const hasImages = (totalImageCount ?? 0) > 0;
+
+  // Keep the store flag in sync with the live queue. Done in an effect so we
+  // never call setState during render.
+  useEffect(() => {
+    if (isProcessing !== hasPending) {
+      setIsProcessing(hasPending);
+    }
+  }, [isProcessing, hasPending, setIsProcessing]);
 
   // State for clear-all-data confirmation
   const [showClearModal, setShowClearModal] = useState(false);
@@ -30,7 +51,6 @@ export default function Home() {
 
   const handleFilesAdded = async (files: File[]) => {
     if (!files || files.length === 0) return;
-    setTotalImages(totalImages + files.length);
     setIsProcessing(true);
 
     for (const file of files) {
@@ -69,10 +89,15 @@ export default function Home() {
     }
 
     const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `background-removed-images.${EXT_MAP[exportFormat] === 'jpg' ? 'zip' : 'zip'}`);
+    saveAs(content, 'background-removed-images.zip');
   };
 
   const doClearAllData = async () => {
+    const remaining = await db.images.count();
+    if (remaining === 0) {
+      toast.add({ type: 'warning', title: 'Nothing to clear', description: 'There are no images to delete.', timeout: 4000 });
+      return;
+    }
     imageQueue.clear();
     await db.images.clear();
     resetQueue();
@@ -80,6 +105,10 @@ export default function Home() {
   };
  
   const handleClearAllData = () => {
+    if (!hasImages) {
+      doClearAllData();
+      return;
+    }
     if (skipClearData) {
       doClearAllData();
     } else {

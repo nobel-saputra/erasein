@@ -62,7 +62,6 @@ export const processImageTask = async (id: string, file: Blob, retries = 1) => {
         
         if (e.data.success) {
           await db.images.update(id, { status: 'done', processedBlob: e.data.blob });
-          useQueueStore.getState().incrementProcessed();
           useQueueStore.getState().setIsModelReady(true);
           resolve();
         } else {

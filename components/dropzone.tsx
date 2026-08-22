@@ -29,9 +29,6 @@ export function ImageDropzone({ onFilesAdded, onReject, disabled = false }: Drop
       'image/jpeg': [],
       'image/png': [],
       'image/webp': [],
-      'image/gif': [],
-      'image/avif': [],
-      'image/bmp': [],
     },
     disabled
   });
@@ -55,7 +52,7 @@ export function ImageDropzone({ onFilesAdded, onReject, disabled = false }: Drop
         {isDragActive ? 'Drop your images here...' : 'Drag & Drop Images Here'}
       </h3>
       <p className="font-body-sm text-body-sm text-secondary">
-        or click to select files (Supports JPG, PNG, WEBP, GIF, AVIF, BMP)
+        or click to select files (Supports JPG, PNG, WEBP)
       </p>
     </div>
   );
